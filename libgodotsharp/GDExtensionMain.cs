@@ -5,7 +5,7 @@ namespace GDExtension
 {
 	public unsafe static class GDExtensionMain
 	{
-		public static Native.GDExtensionInterface extensionInterface;
+		public static Native.GDExtensionInterfaceGetProcAddress getProcAddress;
 		public static void* library;
 	}
 }

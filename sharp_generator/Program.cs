@@ -18,9 +18,6 @@ namespace SharpGenerator
             Console.ResetColor();
         }
 
-        [DllImport("libgodot")]
-        public static extern int godot_main(int argc, string[] args);
-
         static void Main(string[] args)
         {
             Console.WriteLine($"Working Dir {Directory.GetCurrentDirectory()}");
@@ -126,51 +123,11 @@ namespace SharpGenerator
                 {
                     throw new Exception("Failed to laod godot");
                 }
-                var custom_args = new string[] { "libgodot", "--dump-extension-api", "--verbose", "--headless", "" };
-                if (godot_main(custom_args.Length - 1, custom_args) != 0)
-                {
-                    throw new Exception("Godot had error");
-                }
             }
             catch (Exception e)
             {
                 Warn(e.ToString());
             }
-            var pathToGenJson = Path.Combine(Environment.CurrentDirectory, "extension_api.json");
-            if (!File.Exists(pathToGenJson))
-            {
-                pathToGenJson = Path.Combine(Directory.GetCurrentDirectory(), "extension_api.json");
-            }
-            if (!File.Exists(pathToGenJson))
-            {
-                throw new Exception("Failed to find extension_api json");
-            }
-            var ginDirParent = Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "..", "..", "libgodotsharp");
-            ginDirParent = Path.GetFullPath(ginDirParent);
-            if (!Directory.Exists(ginDirParent))
-            {
-                ginDirParent = Path.Combine(Directory.GetCurrentDirectory(), "libgodotsharp");
-            }
-            if (!Directory.Exists(ginDirParent))
-            {
-                ginDirParent = Path.Combine(Directory.GetCurrentDirectory(), "..", "libgodotsharp");
-            }
-            ginDirParent = Path.GetFullPath(ginDirParent);
-            if (!Directory.Exists(Path.Combine(ginDirParent, "Extensions")))
-            {
-                throw new Exception("Don't know where to put files");
-            }
-            var ginDir = Path.Combine(ginDirParent, "Generated");
-            if (Directory.Exists(ginDir))
-            {
-                Directory.Delete(ginDir, true);
-            }
-            Directory.CreateDirectory(ginDir);
-            var docs = Path.Combine(GodotRootDir, "doc", "classes") + "/";
-            var configName = "float_64";
-            var api = Api.Create(pathToGenJson);
-            var convert = new Convert(api, ginDir, docs, configName);
-            convert.Emit();
 
             //Copy all platform files
 

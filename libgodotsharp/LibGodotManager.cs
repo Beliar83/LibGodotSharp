@@ -1,8 +1,9 @@
 using GDExtension;
-using System.IO;
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using Godot;
+using Godot.Bridge;
+using Godot.Collections;
+using Godot.NativeInterop;
 using static GDExtension.Native;
 
 namespace LibGodotSharp
@@ -10,79 +11,134 @@ namespace LibGodotSharp
     public static unsafe class LibGodotManager
     {
         public delegate void SceneTreeLoad(SceneTree scene);
-        public delegate void ProjectSettingsLoad(ProjectSettings settings);
 
+        public delegate Dictionary ProjectSettingsLoad();
+        
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         public delegate void ProjectSettingsLoadNative(void* scene);
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         public delegate void SceneTreeLoadNative(void* scene);
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-        public delegate bool GDentryPoint(GDExtensionInterface interface_, void* library, GDExtensionInitialization* expIntilzation);
+        public delegate bool GDentryPoint(GDExtensionInterfaceGetProcAddress getProcAddress, void* library, GDExtensionInitialization* expIntilzation);
 
-        [DllImport("godot_android", EntryPoint = "libgodot_bind", CallingConvention = CallingConvention.StdCall)]
-        internal static extern void Android_libgodot_bind(void* entryPoint, void* sceneTreeLoad, void* projectSettingsLoad);
+        // [DllImport("godot_android", EntryPoint = "libgodot_bind", CallingConvention = CallingConvention.StdCall)]
+        // internal static extern void Android_libgodot_bind(void* entryPoint, void* sceneTreeLoad, void* projectSettingsLoad);
+        //
+        [DllImport("libgodot", EntryPoint = "libgodot_bind", CallingConvention = CallingConvention.StdCall)]
+        internal static extern void libgodot_bind_for_editor(void* sceneTreeLoad, void* projectSettingsLoad, GodotPluginsInitializeForGameBuild godotPluginsInitialize);
+        
+        [DllImport("libgodot", EntryPoint = "libgodot_bind", CallingConvention = CallingConvention.StdCall)]
+        internal static extern void libgodot_bind_for_game(void* sceneTreeLoad, void* projectSettingsLoad, GodotPluginsInitializeForGameBuild godotPluginsInitialize);
 
         [DllImport("libgodot", CallingConvention = CallingConvention.StdCall)]
-        internal static extern void libgodot_bind(void* entryPoint, void* sceneTreeLoad, void* projectSettingsLoad);
-
+        internal static extern int setup_main(int amount, string[] args);
+        [DllImport("libgodot", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int godot_main();
         [DllImport("libgodot", CallingConvention = CallingConvention.StdCall)]
-        internal static extern int godot_main(int amount, string[] args);
-        internal static ProjectSettingsLoad _projectSettingsLoad;
+        internal static extern bool is_editor_build();
+
+
+        
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct PluginsCallbacks
+        {
+            // public delegate bool LoadScriptAssembliesCallback();
+            // public delegate IntPtr GetEditorPluginCallback(int arg0, IntPtr arg1);
+            // public delegate bool UnloadScriptAssembliesCallback();
+            
+            // public LoadScriptAssembliesCallback* LoadScriptAssembliesCallback;
+            // public GetEditorPluginCallback GetEditorPluginCallback;
+            // public UnloadScriptAssembliesCallback UnloadScriptAssembliesCallback;
+            public delegate* unmanaged<godot_bool> LoadScriptAssembliesCallback;
+            public delegate* unmanaged<IntPtr, int, IntPtr> GetEditorPluginCallback;
+            public delegate* unmanaged<godot_bool> UnloadScriptAssembliesCallback;            
+        }        
+        
+        internal delegate bool GodotPluginsInitializeForEditorBuild(IntPtr godotDllHandle, bool isEditorHint, PluginsCallbacks *pluginsCallbacks, 
+            ManagedCallbacks* managedCallbacks, IntPtr unmanagedCallbacks, int unmanagedCallbacksSize);
+
+        internal delegate bool GodotPluginsInitializeForGameBuild(IntPtr godotDllHandle, ManagedCallbacks* managedCallbacks, IntPtr unmanagedCallbacks, int unmanagedCallbacksSize);
+
         internal static SceneTreeLoad _sceneTreeLoad;
-        internal static GDentryPoint _entryPoint;
+        internal static ProjectSettingsLoad _projectSettingsLoad;
 
-        internal static void SceneTreeMain(void* startup)
+        internal static void SceneTreeMain(godot_variant* startup)
         {
-            _sceneTreeLoad(SceneTree.Construct(startup));
+            // var ptr = new IntPtr(startup);
+            // NativeFuncs.godotsharp_variant_new_object(out godot_variant tree, ptr);
+            var tree = VariantUtils.ConvertTo<SceneTree>(*startup);
+            _sceneTreeLoad(tree);
             GC.Collect();
         }
 
-        internal static void ProjectSettingsMain(void* startup)
+        internal unsafe static void ProjectSettingsMain(godot_dictionary* settings)
         {
-            _projectSettingsLoad(ProjectSettings.Construct(startup));
-            GC.Collect();
+            Dictionary projectSettings = _projectSettingsLoad();
+            
+            NativeFuncs.godotsharp_dictionary_merge(ref *settings, VariantUtils.CreateFromDictionary(projectSettings).Dictionary, godot_bool.True);
+        }        
+        
+        private static Assembly[] _scriptAssemblies;
+        
+        [UnmanagedCallersOnly]
+        static godot_bool LoadScriptAssemblies()
+        {
+            return LoadScripts() ? godot_bool.True : godot_bool.False;
         }
 
-        internal static bool GDentryPointMain(GDExtensionInterface interface_, void* library, GDExtensionInitialization* expIntilzation)
+        static bool LoadScripts()
         {
-            return _entryPoint(interface_, library, expIntilzation);
-        }
+            foreach (Assembly scriptAssembly in _scriptAssemblies)
+            {
+                ScriptManagerBridge.LookupScriptsInAssembly(scriptAssembly);
+            }
 
-        public static int RunGodot(string[] args, GDentryPoint entryPoint, SceneTreeLoad sceneTreeLoad, ProjectSettingsLoad projectSettingsLoad, bool verboes = false)
+            return true;
+        }
+        
+        public static int RunGodot(string[] args, SceneTreeLoad sceneTreeLoad, ProjectSettingsLoad projectSettingsLoad, Assembly[] scriptAssemblies, bool verboes = false)
         {
             if (sceneTreeLoad is null)
             {
                 throw new Exception("Needs sceneTreeLoad");
             }
-            if (_sceneTreeLoad is not null || _entryPoint is not null || _projectSettingsLoad is not null)
+
+            if (_sceneTreeLoad is not null)
             {
                 throw new Exception("All ready bound into godot");
             }
+
+            _scriptAssemblies = scriptAssemblies;
             _sceneTreeLoad = sceneTreeLoad;
-            _entryPoint = entryPoint;
             _projectSettingsLoad = projectSettingsLoad;
-            var entryPointPointer = (void*)SaftyRapper.GetFunctionPointerForDelegate(GDentryPointMain);
+
             var sceneTreeMainPointer = (void*)SaftyRapper.GetFunctionPointerForDelegate(SceneTreeMain);
             var projectSettingsMainPointer = (void*)SaftyRapper.GetFunctionPointerForDelegate(ProjectSettingsMain);
-            if (AndroidTest.Check())
+
+            CheckIfLatestLibraryInRoot();
+            try
             {
-                Android_libgodot_bind(entryPointPointer, sceneTreeMainPointer, projectSettingsMainPointer);
-                return 0;
-            }
-            else
-            {
-                CheckIfLatestLibraryInRoot();
-                try
+                if (is_editor_build())
                 {
-                    libgodot_bind(entryPointPointer, sceneTreeMainPointer, projectSettingsMainPointer);
+                    libgodot_bind_for_game(sceneTreeMainPointer, projectSettingsMainPointer, InitializeMonoForTemplateBuild);
                 }
-                catch (DllNotFoundException)
+                else
                 {
-                    FallBackLoadPlatformLibrary();
-                    libgodot_bind(entryPointPointer, sceneTreeMainPointer, projectSettingsMainPointer);
+                    libgodot_bind_for_editor(sceneTreeMainPointer, projectSettingsMainPointer, InitializeMonoForTemplateBuild);
                 }
             }
-            LibGodotCustomCallable.Init();
+            catch (DllNotFoundException)
+            {
+                FallBackLoadPlatformLibrary();
+                if (is_editor_build())
+                {
+                    libgodot_bind_for_game(sceneTreeMainPointer, projectSettingsMainPointer, InitializeMonoForTemplateBuild);
+                }
+                else
+                {
+                    libgodot_bind_for_editor(sceneTreeMainPointer, projectSettingsMainPointer, InitializeMonoForTemplateBuild);
+                }
+            }
 
             var argss = new List<string>(args);
             argss.Insert(0, "libgodot");
@@ -90,9 +146,34 @@ namespace LibGodotSharp
             {
                 argss.Add("--verbose");
             }
-            return godot_main(argss.Count, argss.ToArray());
+
+
+            string[] strings = argss.ToArray();
+            int result = setup_main(argss.Count, strings);
+            
+            
+            if (result != 0) return result;
+            return godot_main();
         }
 
+        private static bool InitializeMonoForEditorBuild(IntPtr godotDllHandle, bool isEditorHint, PluginsCallbacks* pluginsCallbacks, ManagedCallbacks* managedCallbacks, IntPtr unmanagedCallbacks, int unmanagedCallbacksSize)
+        {
+            NativeFuncs.Initialize(unmanagedCallbacks, unmanagedCallbacksSize);
+            *pluginsCallbacks = new PluginsCallbacks
+            {
+                LoadScriptAssembliesCallback = &LoadScriptAssemblies,
+            };
+
+            *managedCallbacks = ManagedCallbacks.Create();
+            return true;
+        }                
+        private static bool InitializeMonoForTemplateBuild(IntPtr godotDllHandle, ManagedCallbacks* managedCallbacks, IntPtr unmanagedCallbacks, int unmanagedCallbacksSize)
+        {
+            NativeFuncs.Initialize(unmanagedCallbacks, unmanagedCallbacksSize);
+            *managedCallbacks = ManagedCallbacks.Create();
+            LoadScripts();
+            return true;
+        }        
 
         private static bool FileCompare(string file1, string file2)
         {

@@ -18,12 +18,13 @@
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 		<PackageId>LibGodotSharp.Desktop</PackageId>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<Version>4.1.0</Version>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<Content Pack="true" Include="LibGodotSharp.Desktop.targets" PackagePath="build\" />
-		<Content Pack="true" Include="runtimes\**" PackagePath="runtimes\"/>
-		<PackageReference Include="Microsoft.NETCore.Platforms" Version="7.0.0" />
+		<Content Pack="true" Include="runtimes\**" PackagePath="runtimes\" />
+		<PackageReference Include="Microsoft.NETCore.Platforms" Version="6.0.0" />
 		<None Include="..\Assets\icon.png">
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
