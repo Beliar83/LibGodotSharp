@@ -17,7 +17,7 @@ namespace LibGodotSharp
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         public delegate void SceneTreeLoadNative(void* scene);
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-        public delegate bool GDentryPoint(GDExtensionInterface interface_, void* library, GDExtensionInitialization* expIntilzation);
+        public delegate bool GDentryPoint(GDExtensionInterfaceGetProcAddress interface_, void* library, GDExtensionInitialization* expIntilzation);
 
         [DllImport("godot_android", EntryPoint = "libgodot_bind", CallingConvention = CallingConvention.StdCall)]
         internal static extern void Android_libgodot_bind(void* entryPoint, void* sceneTreeLoad, void* projectSettingsLoad);
@@ -43,7 +43,7 @@ namespace LibGodotSharp
             GC.Collect();
         }
 
-        internal static bool GDentryPointMain(GDExtensionInterface interface_, void* library, GDExtensionInitialization* expIntilzation)
+        internal static bool GDentryPointMain(GDExtensionInterfaceGetProcAddress interface_, void* library, GDExtensionInitialization* expIntilzation)
         {
             return _entryPoint(interface_, library, expIntilzation);
         }
