@@ -39,7 +39,7 @@ namespace Generators
 			using static GDExtension.Native;
 			public static class {{assimblyName}}ExtensionEntry {
 				public static unsafe bool EntryPoint(GDExtensionInterfaceGetProcAddress getProcAddress, void* library, GDExtensionInitialization* init) {
-					GDExtensionMain.extensionInterface = mew GDExtensionInterface(getProcAddress);
+					GDExtensionMain.extensionInterface = new GDExtensionInterface(getProcAddress);
 					GDExtensionMain.library = library;
 					*init = new GDExtensionInitialization() {
 						minimum_initialization_level = GDExtensionInitializationLevel.GDEXTENSION_INITIALIZATION_CORE,

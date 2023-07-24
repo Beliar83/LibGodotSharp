@@ -90,10 +90,10 @@ namespace SharpGenerator
             {
                 path = RuntimeInformation.ProcessArchitecture switch
                 {
-                    Architecture.X64 => Path.Combine(path, $"godot.linuxbsd.editor.x86_64.so"),
-                    Architecture.Arm64 => Path.Combine(path, $"godot.linuxbsd.editor.arm64.so"),
-                    Architecture.Arm => Path.Combine(path, $"godot.linuxbsd.editor.arm32.so"),
-                    _ => Path.Combine(path, $"godot.linuxbsd.editor.x86_32.so"),
+                    Architecture.X64 => Path.Combine(path, $"libgodot.linuxbsd.editor.x86_64.so"),
+                    Architecture.Arm64 => Path.Combine(path, $"libgodot.linuxbsd.editor.arm64.so"),
+                    Architecture.Arm => Path.Combine(path, $"libgodot.linuxbsd.editor.arm32.so"),
+                    _ => Path.Combine(path, $"libgodot.linuxbsd.editor.x86_32.so"),
                 };
             }
             if (!File.Exists(path))
@@ -126,6 +126,9 @@ namespace SharpGenerator
                 {
                     throw new Exception("Failed to laod godot");
                 }
+                
+                NativeLibrary.SetDllImportResolver(typeof(Program).Assembly, (name, _, _) => name == "libgodot" ? GodotLibrary : IntPtr.Zero);
+                
                 var custom_args = new string[] { "libgodot", "--dump-extension-api", "--verbose", "--headless", "" };
                 if (godot_main(custom_args.Length - 1, custom_args) != 0)
                 {

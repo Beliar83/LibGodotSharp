@@ -68,7 +68,7 @@ public class MainGodotGame
             }
             allCubes = System.Array.Empty<HelloFromLibGodot>();
         }
-        GC.Collect();
+        // GC.Collect();
     }
 
     static int _counter = 0;
@@ -82,6 +82,7 @@ public class MainGodotGame
 
     public unsafe static void LoadScene(SceneTree scene)
     {
+        Console.WriteLine("LoadScene Start");
         _sceneTree = scene;
 
         foreach (var item in InputMap.GetActions())
@@ -152,5 +153,6 @@ public class MainGodotGame
         scene.Root.UseXr = RunInVR;
         scene.Root.AddChild(newNode);
         e.SetScript(script);
+        Console.WriteLine("LoadScene End");
     }
 }

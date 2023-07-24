@@ -1092,7 +1092,7 @@ namespace GDExtension
 			[UnmanagedFunctionPointer(CallingConvention.StdCall)]
 			public delegate Native.GDExtensionPtrConstructor variant_get_ptr_constructor_delegate(Native.GDExtensionVariantType p_type, int p_constructor);
 
-			public Native.GDExtensionInterface.variant_get_ptr_destructor_delegate variant_get_ptr_destructor => SaftyRapper.GetDelegateForFunctionPointer<variant_get_ptr_destructor_delegate>(getProcAddress("variant_get_ptr_constructor"));
+			public Native.GDExtensionInterface.variant_get_ptr_destructor_delegate variant_get_ptr_destructor => SaftyRapper.GetDelegateForFunctionPointer<variant_get_ptr_destructor_delegate>(getProcAddress("variant_get_ptr_destructor"));
 
 			[UnmanagedFunctionPointer(CallingConvention.StdCall)]
 			public delegate Native.GDExtensionPtrDestructor variant_get_ptr_destructor_delegate(Native.GDExtensionVariantType p_type);
