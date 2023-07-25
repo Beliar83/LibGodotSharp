@@ -37,6 +37,6 @@ runs:
     - name: Checkout godot engine repo
       uses: actions/checkout@v3
       with:
-        repository: RhubarbVR/godot-lib
+        repository: Beliar83/godot
         path: godot
-        ref: master
+        ref: godot-lib_4.1

@@ -1,3 +1,4 @@
+using System.Reflection;
 using GodotGame;
 using LibGodotSharp;
 using Org.Godotengine.Godot;
@@ -18,7 +19,7 @@ public class GodotApp : FullScreenGodotApp
     public unsafe override void OnCreate(Bundle? savedInstanceState)
     {
         Java.Lang.JavaSystem.LoadLibrary("godot_android");
-        LibGodotManager.RunGodot(Array.Empty<string>(), TestLibGodotSharpExtensionEntry.EntryPoint, MainGodotGame.LoadScene, MainGodotGame.LoadProjectSettings, true);
+        LibGodotManager.RunGodot(Array.Empty<string>(), MainGodotGame.LoadScene, MainGodotGame.LoadProjectSettings, Array.Empty<Assembly>(), true);
         SetTheme(TestAndroid.Resource.Style.GodotAppMainTheme);
         base.OnCreate(savedInstanceState);
     }
