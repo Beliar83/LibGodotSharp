@@ -18,7 +18,7 @@
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 		<PackageId>LibGodotSharp.Desktop</PackageId>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<Version>4.1.0</Version>
+		<Version>4.1.1</Version>
 	</PropertyGroup>
 
 	<ItemGroup>

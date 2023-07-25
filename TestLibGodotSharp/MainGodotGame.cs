@@ -1,5 +1,4 @@
 ﻿using Godot;
-using Godot.Collections;
 
 namespace GodotGame;
 
@@ -16,18 +15,16 @@ public class MainGodotGame
         return meshRender;
     }
 
-    public static Dictionary LoadProjectSettings()
+    public static void LoadProjectSettings()
     {
-        var settings = new Dictionary();
-        settings["application/config/name"] = "TestConsoleApp";
+        
+        ProjectSettings.SetSetting("application/config/name", "TestConsoleApp");
         if (RunInVR)
         {
-            settings["xr/openxr/enabled"] = true;
-            settings["xr/shaders/enabled"] = true;
-            settings["display/window/vsync/vsync_mode"] = 0;
+            ProjectSettings.SetSetting("xr/openxr/enabled", true);
+            ProjectSettings.SetSetting("xr/shaders/enabled", true);
+            ProjectSettings.SetSetting("display/window/vsync/vsync_mode", 0);
         }
-
-        return settings;
     }
 
     static HelloFromLibGodot[] allCubes = System.Array.Empty<HelloFromLibGodot>();

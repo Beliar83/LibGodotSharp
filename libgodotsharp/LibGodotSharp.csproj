@@ -20,7 +20,7 @@
 		<PackageTags>OpenXR C# AR VR MR XR MixedReality HoloLens Rendering 3D Vulkan OpenGL Audio UI Net Standard</PackageTags>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<Version>4.1.0</Version>
+		<Version>4.1.1</Version>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="GodotSharp" Version="4.1.1" />
