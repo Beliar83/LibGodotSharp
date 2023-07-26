@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - '*'      
       
 env:
   # Only used for the cache key. Increment version to force clean build.
@@ -12,7 +14,7 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
 
 concurrency:
-  group: ci-${{github.actor}}-${{github.head_ref || github.run_number}}-${{github.ref}}-nugetpackages-Godot4.0
+  group: ci-${{github.actor}}-${{github.head_ref || github.run_number}}-${{github.ref}}-nugetpackages-Godot4.1
   cancel-in-progress: true
 
 jobs:
