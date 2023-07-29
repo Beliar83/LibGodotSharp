@@ -2,7 +2,7 @@ name: Publish NuGet Package Godot4.1
 on:
   push:
     branches:
-      - main
+      - "4.1"
       
 env:
   # Only used for the cache key. Increment version to force clean build.
