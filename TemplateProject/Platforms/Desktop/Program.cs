@@ -1,4 +1,5 @@
-﻿using LibGodotSharp;
+﻿using System.Reflection;
+using LibGodotSharp;
 
 namespace DesktopPlatform;
 
@@ -11,6 +12,6 @@ internal class Program
         runVerbose = true;
 #endif
         //Passes arguments down to godot
-        return LibGodotManager.RunGodot(args, GodotApplicationExtensionEntry.EntryPoint, GodotApplication.LoadScene, GodotApplication.LoadProjectSettings, runVerbose);
+        return LibGodotManager.RunGodot(args, GodotApplication.LoadScene, GodotApplication.LoadProjectSettings, new[] {typeof(GodotApplication).Assembly}, runVerbose);
     }
 }

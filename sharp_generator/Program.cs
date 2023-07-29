@@ -18,160 +18,8 @@ namespace SharpGenerator
             Console.ResetColor();
         }
 
-        [DllImport("libgodot")]
-        public static extern int godot_main(int argc, string[] args);
-
         static void Main(string[] args)
         {
-            Console.WriteLine($"Working Dir {Directory.GetCurrentDirectory()}");
-            GodotRootDir = Directory.GetCurrentDirectory();
-            if (args.Length >= 1)
-            {
-                GodotRootDir = args[0];
-            }
-            var startingDir = GodotRootDir;
-            if (File.Exists(Path.Combine(startingDir, "godot", "SConstruct")))
-            {
-                GodotRootDir = Path.Combine(startingDir, "godot");
-                Warn("thinking it is running in github action so run scons library_type=shared_library");
-                skipScons = true;
-            }
-            if (!File.Exists(Path.Combine(GodotRootDir, "SConstruct")))
-            {
-                GodotRootDir = Path.Combine(startingDir, "..", "godot-lib");
-            }
-            if (!File.Exists(Path.Combine(GodotRootDir, "SConstruct")))
-            {
-                GodotRootDir = Path.Combine(startingDir, "..", "..", "..", "..", "..", "godot-lib");
-            }
-            if (!File.Exists(Path.Combine(GodotRootDir, "SConstruct")))
-            {
-                GodotRootDir = Path.Combine(startingDir, "..", "godot");
-            }
-            if (!File.Exists(Path.Combine(GodotRootDir, "SConstruct")))
-            {
-                GodotRootDir = Path.Combine(startingDir, "..", "..", "..", "..", "..", "godot");
-            }
-            if (!File.Exists(Path.Combine(GodotRootDir, "SConstruct")))
-            {
-                throw new Exception("Failed to find lib godot root");
-            }
-            Console.WriteLine($"Godot Root Dir:{GodotRootDir}");
-            var path = Path.Combine(GodotRootDir, "bin");
-            if (!skipScons)
-            {
-                if (!SconsRunner.RunScons())
-                {
-                    throw new Exception("Failed to run scons");
-                }
-            }
-            path = Path.GetFullPath(path);
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                path = RuntimeInformation.ProcessArchitecture switch
-                {
-                    Architecture.X64 => Path.Combine(path, $"godot.windows.editor.x86_64.dll"),
-                    Architecture.Arm64 => Path.Combine(path, $"godot.windows.editor.arm64.dll"),
-                    Architecture.Arm => Path.Combine(path, $"godot.windows.editor.arm32.dll"),
-                    _ => Path.Combine(path, $"godot.windows.editor.x86_32.dll"),
-                };
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                path = RuntimeInformation.ProcessArchitecture switch
-                {
-                    Architecture.X64 => Path.Combine(path, $"godot.macos.editor.x86_64.dylib"),
-                    Architecture.Arm64 => Path.Combine(path, $"godot.macos.editor.arm64.dylib"),
-                    Architecture.Arm => Path.Combine(path, $"godot.macos.editor.arm32.dylib"),
-                    _ => Path.Combine(path, $"godot.macos.editor.x86_32.dylib"),
-                };
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                path = RuntimeInformation.ProcessArchitecture switch
-                {
-                    Architecture.X64 => Path.Combine(path, $"godot.linuxbsd.editor.x86_64.so"),
-                    Architecture.Arm64 => Path.Combine(path, $"godot.linuxbsd.editor.arm64.so"),
-                    Architecture.Arm => Path.Combine(path, $"godot.linuxbsd.editor.arm32.so"),
-                    _ => Path.Combine(path, $"godot.linuxbsd.editor.x86_32.so"),
-                };
-            }
-            if (!File.Exists(path))
-            {
-                throw new Exception("Editor build not found");
-            }
-            try
-            {
-                var copyfile = Path.Combine(path, "..", "libgodot");
-                copyfile = Path.GetFullPath(copyfile);
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    copyfile += ".dll";
-                }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                {
-                    copyfile += ".dylib";
-                }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                {
-                    copyfile += ".so";
-                }
-                File.Copy(path, copyfile, true);
-                if (!File.Exists(copyfile))
-                {
-                    throw new Exception($"Editor file copy failed from {path} to {copyfile}");
-                }
-                GodotLibrary = NativeLibrary.Load(Path.GetFullPath(copyfile));
-                if (GodotLibrary == IntPtr.Zero)
-                {
-                    throw new Exception("Failed to laod godot");
-                }
-                var custom_args = new string[] { "libgodot", "--dump-extension-api", "--verbose", "--headless", "" };
-                if (godot_main(custom_args.Length - 1, custom_args) != 0)
-                {
-                    throw new Exception("Godot had error");
-                }
-            }
-            catch (Exception e)
-            {
-                Warn(e.ToString());
-            }
-            var pathToGenJson = Path.Combine(Environment.CurrentDirectory, "extension_api.json");
-            if (!File.Exists(pathToGenJson))
-            {
-                pathToGenJson = Path.Combine(Directory.GetCurrentDirectory(), "extension_api.json");
-            }
-            if (!File.Exists(pathToGenJson))
-            {
-                throw new Exception("Failed to find extension_api json");
-            }
-            var ginDirParent = Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "..", "..", "libgodotsharp");
-            ginDirParent = Path.GetFullPath(ginDirParent);
-            if (!Directory.Exists(ginDirParent))
-            {
-                ginDirParent = Path.Combine(Directory.GetCurrentDirectory(), "libgodotsharp");
-            }
-            if (!Directory.Exists(ginDirParent))
-            {
-                ginDirParent = Path.Combine(Directory.GetCurrentDirectory(), "..", "libgodotsharp");
-            }
-            ginDirParent = Path.GetFullPath(ginDirParent);
-            if (!Directory.Exists(Path.Combine(ginDirParent, "Extensions")))
-            {
-                throw new Exception("Don't know where to put files");
-            }
-            var ginDir = Path.Combine(ginDirParent, "Generated");
-            if (Directory.Exists(ginDir))
-            {
-                Directory.Delete(ginDir, true);
-            }
-            Directory.CreateDirectory(ginDir);
-            var docs = Path.Combine(GodotRootDir, "doc", "classes") + "/";
-            var configName = "float_64";
-            var api = Api.Create(pathToGenJson);
-            var convert = new Convert(api, ginDir, docs, configName);
-            convert.Emit();
-
             //Copy all platform files
 
             GithubBuildVersion = Environment.GetEnvironmentVariable("BUILD_VERSION");
@@ -199,6 +47,7 @@ Project(""{9A19103F-16F7-4668-BE54-9A1E7A4F7556}"") = ""LibGodotSharpDesktop"", 
 EndProject";
             ReplaceTextInFile(Path.Combine(templateDir, "GodotApplication.sln"), removeOnBuild, null);
             ReplaceTextInFile(Path.Combine(templateDir, "GodotApplication", "GodotApplication.csproj"), "<ProjectReference Include=\"..\\..\\libgodotsharp\\LibGodotSharp.csproj\" OutputItemType=\"Analyzer\" ReferenceOutputAssembly=\"true\" />", $"<PackageReference Include=\"LibGodotSharp\" Version=\"{GithubBuildVersion}\" />");
+            ReplaceTextInFile(Path.Combine(templateDir, "GodotApplication", "GodotApplication.csproj"), "<ProjectReference Include=\"GodotSharp\" Version=\"4.1.1\"/>", $"<PackageReference Include=\"GodotSharp\" Version=\"{GithubBuildVersion}\" />");
             ReplaceTextInFile(Path.Combine(templateDir, "Platforms", "Desktop", "DesktopPlatform.csproj"), "<ProjectReference Include=\"..\\..\\..\\LibGodotSharpDesktop\\LibGodotSharpDesktop.csproj\" />", $"<PackageReference Include=\"LibGodotSharp.Desktop\" Version=\"{GithubBuildVersion}\" />");
             ReplaceTextInFile(Path.Combine(templateDir, "Platforms", "Android", "AndroidPlatform.csproj"), "<ProjectReference Include=\"..\\..\\..\\LibGodotSharpAndroid\\LibGodotSharpAndroid.csproj\" />", $"<PackageReference Include=\"LibGodotSharp.Android\" Version=\"{GithubBuildVersion}\" />");
 

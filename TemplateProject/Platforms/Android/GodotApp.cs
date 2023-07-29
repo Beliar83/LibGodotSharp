@@ -22,7 +22,7 @@ public class GodotApp : FullScreenGodotApp
         runVerbose = true;
 #endif
         //Arguments do nothing on android
-        LibGodotManager.RunGodot(Array.Empty<string>(), GodotApplicationExtensionEntry.EntryPoint, GodotApplication.LoadScene, GodotApplication.LoadProjectSettings, runVerbose);
+        LibGodotManager.RunGodot(Array.Empty<string>(), GodotApplication.LoadScene, GodotApplication.LoadProjectSettings, new[] {typeof(GodotApplication).Assembly}, runVerbose);
 
         SetTheme(AndroidPlatform.Resource.Style.LibGodotAppMainTheme);
         base.OnCreate(savedInstanceState);

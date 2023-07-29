@@ -1,14 +1,12 @@
-﻿using GDExtension;
+﻿using Godot;
 
 namespace GodotGame;
 
-[Register]
 public partial class ANode : Node3D
 {
-    [Notify(NotificationReady)]
-    public void Ready()
+    /// <inheritdoc />
+    public override void _Ready()
     {
-        SetProcess(true);
         var meshRender = new MeshInstance3D
         {
             Mesh = new BoxMesh()
@@ -16,10 +14,9 @@ public partial class ANode : Node3D
         AddChild(meshRender);
     }
 
-    [Notify(NotificationProcess, arguments = "GetProcessDeltaTime()")]
-    public void Process(double delta)
+    public override void _Process(double delta)
     {
-        RotateY(delta);
+        RotateY((float)delta);
     }
 
     public override void _Input(InputEvent @event)

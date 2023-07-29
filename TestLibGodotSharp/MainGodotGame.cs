@@ -1,5 +1,4 @@
-﻿using GDExtension;
-using LibGodotSharp;
+﻿using Godot;
 
 namespace GodotGame;
 
@@ -16,11 +15,9 @@ public class MainGodotGame
         return meshRender;
     }
 
-    public static void LoadProjectSettings(ProjectSettings projectSettings)
+    public static void LoadProjectSettings()
     {
-        var data = GDExtension.ProjectSettings.GetSetting("display/window/vsync/vsync_mode");
-        Console.WriteLine(data.NativeType);
-        Console.WriteLine(Variant.VariantToObject(data));
+        
         ProjectSettings.SetSetting("application/config/name", "TestConsoleApp");
         if (RunInVR)
         {
@@ -78,9 +75,9 @@ public class MainGodotGame
         Console.WriteLine($"OtherMessage {trains}");
     }
 
-    static SceneTree _sceneTree;
+    static SceneTree _sceneTree = null!;
 
-    public unsafe static void LoadScene(SceneTree scene)
+    public static void LoadScene(SceneTree scene)
     {
         _sceneTree = scene;
 
@@ -112,15 +109,13 @@ public class MainGodotGame
         newNode.AddChild(new ANode()); // Tests funny bug
         newNode.AddChild(new ZNode());
 
-        var array = (PackedInt32Array)new int[] { 3, 3, 3, 3, 435, 345, 3453, 53, 2, 34, 4, 23, 4, 2, 43, 4543534, 435342, 1, 2342345, 5345, 345, 345, 43, 543, 645, 67, 5676, 8, 64534, 5, 345, 3456, 45, 67, 76, 756867, 1, 34, 534, 5, 345, 34, 534, 634, 5, 3456, 3 };
-        var stringArray = (PackedStringArray)new string[] { "This", "IS", "A", "Packed", "Sting", "ARRAY", "I", "AM", "Testing", "It", "By", "ADDing", "STUFF", "TO", "it", "It", "Might", "be", "COOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOL", "IFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF STUFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF JUSTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT WORKSDSDEDF!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" };
-        array.Size();
-        stringArray.Size();
-        for (int i = 0; i < array.Size(); i++)
+        var array = new int[] { 3, 3, 3, 3, 435, 345, 3453, 53, 2, 34, 4, 23, 4, 2, 43, 4543534, 435342, 1, 2342345, 5345, 345, 345, 43, 543, 645, 67, 5676, 8, 64534, 5, 345, 3456, 45, 67, 76, 756867, 1, 34, 534, 5, 345, 34, 534, 634, 5, 3456, 3 };
+        var stringArray = new string[] { "This", "IS", "A", "Packed", "Sting", "ARRAY", "I", "AM", "Testing", "It", "By", "ADDing", "STUFF", "TO", "it", "It", "Might", "be", "COOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOL", "IFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF STUFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF JUSTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT WORKSDSDEDF!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" };
+        for (int i = 0; i < array.Length; i++)
         {
             Console.WriteLine(array[i]);
         }
-        for (int i = 0; i < stringArray.Size(); i++)
+        for (int i = 0; i < stringArray.Length; i++)
         {
             Console.WriteLine(stringArray[i]);
         }
@@ -139,17 +134,15 @@ public class MainGodotGame
         var script = new GDScript
         {
             SourceCode =
-@"
-        extends Label
+@"extends Label
 
-        func _ready():
-        	print(get_tree().root.get_class())
-
-        "
+func _ready():
+    print(get_tree().root.get_class())
+"
         };
         script.Reload();
         newNode.AddChild(e);
-        scene.Root.UseXr = RunInVR;
+        scene.Root.UseXR = RunInVR;
         scene.Root.AddChild(newNode);
         e.SetScript(script);
     }

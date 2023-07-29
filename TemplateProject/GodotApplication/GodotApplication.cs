@@ -1,5 +1,4 @@
-﻿using GDExtension;
-
+﻿using Godot;
 using Nodes;
 
 /// <summary>
@@ -26,7 +25,7 @@ public static class GodotApplication
     /// Starting point to change project settings
     /// </summary>
     /// <param name="projectSettings"></param>
-    public static void LoadProjectSettings(ProjectSettings projectSettings)
+    public static void LoadProjectSettings()
     {
         ProjectSettings.SetSetting("application/config/name", "GodotApplication");
     }
