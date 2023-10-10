@@ -1,0 +1,16 @@
+﻿{
+  "inputFilePath": "../../godotSharpGDExtension/src/dotnet_api.h",
+  "userIncludeDirectories": [
+    "../../godotSharpGDExtension/godot-cpp/include",
+    "../../godotSharpGDExtension/godot-cpp/gen/include",
+    "../../godotSharpGDExtension/godot-cpp/gdextension"
+  ],
+  "platforms": {
+    "x86_64-pc-windows-msvc": {
+      "defines" : ["C2CS"]
+    },
+    "aarch64-pc-windows-msvc": {
+      "defines" : ["C2CS"]
+    }
+  }
+}

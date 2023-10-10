@@ -1,0 +1,56 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33205.214
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharpGenerator", "sharp_generator\SharpGenerator.csproj", "{0CDCE5DC-01DC-4B15-A070-DCBCE6477487}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GodotSharpGDExtension.CSharp", "GodotSharpGDExtension.CSharp\GodotSharpGDExtension.CSharp.csproj", "{3BBAE65F-9139-4C0D-847D-CF36A85B0BE8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Other", "Other", "{1EBEE447-EDAD-4A2B-AFAA-35F48A08C8E7}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoLibrary", "DemoLibrary\DemoLibrary.csproj", "{1FCECF3F-C25A-4E53-B16E-1B234634EC54}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotSharpGDExtension.CSharp.SourceGenerator", "GodotSharpGDExtension.CSharp.SourceGenerator\GodotSharpGDExtension.CSharp.SourceGenerator.csproj", "{8CBD382B-6F91-4A07-A74C-64A32E33136D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpGenTest", "SharpGenTest\SharpGenTest.csproj", "{29604C66-E85F-4DDB-A6B9-230DE19FB505}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0CDCE5DC-01DC-4B15-A070-DCBCE6477487}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0CDCE5DC-01DC-4B15-A070-DCBCE6477487}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0CDCE5DC-01DC-4B15-A070-DCBCE6477487}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0CDCE5DC-01DC-4B15-A070-DCBCE6477487}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3BBAE65F-9139-4C0D-847D-CF36A85B0BE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3BBAE65F-9139-4C0D-847D-CF36A85B0BE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3BBAE65F-9139-4C0D-847D-CF36A85B0BE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3BBAE65F-9139-4C0D-847D-CF36A85B0BE8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1FCECF3F-C25A-4E53-B16E-1B234634EC54}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1FCECF3F-C25A-4E53-B16E-1B234634EC54}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1FCECF3F-C25A-4E53-B16E-1B234634EC54}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1FCECF3F-C25A-4E53-B16E-1B234634EC54}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8CBD382B-6F91-4A07-A74C-64A32E33136D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8CBD382B-6F91-4A07-A74C-64A32E33136D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8CBD382B-6F91-4A07-A74C-64A32E33136D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8CBD382B-6F91-4A07-A74C-64A32E33136D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{29604C66-E85F-4DDB-A6B9-230DE19FB505}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29604C66-E85F-4DDB-A6B9-230DE19FB505}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29604C66-E85F-4DDB-A6B9-230DE19FB505}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29604C66-E85F-4DDB-A6B9-230DE19FB505}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F5A32E29-BA17-4929-AB0D-C0C6DECC31A8}
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+	EndGlobalSection
+EndGlobal

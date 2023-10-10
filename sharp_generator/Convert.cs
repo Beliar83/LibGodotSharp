@@ -2,6 +2,7 @@ using SharpGenerator;
 using System.Linq;
 using System.Xml.Serialization;
 using System;
+using SharpGenerator.Documentation;
 
 namespace SharpGenerator;
 
@@ -77,7 +78,7 @@ public class Convert
         foreach (var native in api.nativeStructures)
         {
             var file = File.CreateText(dir + "/NativeStructures/" + Fixer.Type(native.name, api) + ".cs");
-            file.WriteLine("namespace GDExtension;");
+            file.WriteLine("namespace GodotSharpGDExtension;");
             file.WriteLine(value: "[StructLayout(LayoutKind.Sequential)]");
             file.WriteLine($"public unsafe struct {native.name} {{");
             foreach (var member in native.format.Split(";"))
@@ -119,7 +120,7 @@ public class Convert
             {
                 file = (File.CreateText(dir + "/UtilityFunctions/" + cat + ".cs"), new List<string>());
                 files.Add(cat, file);
-                file.Item1.WriteLine("namespace GDExtension;");
+                file.Item1.WriteLine("namespace GodotSharpGDExtension;");
                 file.Item1.WriteLine($"public static unsafe partial class {cat} {{");
                 registrations["utility"].Add(cat);
             }
@@ -134,22 +135,18 @@ public class Convert
         {
             for (var i = 0; i < list.Count; i++)
             {
-                file.WriteLine($"\tstatic Native.GDExtensionPtrUtilityFunction __methodPointer_{i};");
+                file.WriteLine($"\tstatic GDExtensionInterface.GDExtensionPtrUtilityFunction __methodPointer_{i} = {list[i]};");
             }
             file.WriteLine();
 
             file.WriteLine("\tpublic static void Register() {");
-            for (var i = 0; i < list.Count; i++)
-            {
-                file.WriteLine(list[i]);
-            }
             file.WriteLine("\t}");
             file.WriteLine(value: "}");
             file.Close();
         }
 
         var register = File.CreateText(dir + "/Register.cs");
-        register.WriteLine("namespace GDExtension;");
+        register.WriteLine("namespace GodotSharpGDExtension;");
         register.WriteLine("public static class Register {");
         foreach (var (key, list) in registrations)
         {
@@ -205,7 +202,7 @@ public class Convert
         if (e.name.Contains('.')) { return; }
         var name = Fixer.Type(e.name, api).Replace(".", "");
         var file = File.CreateText(dir + "/" + Fixer.Type(name, api) + ".cs");
-        file.WriteLine("namespace GDExtension {");
+        file.WriteLine("namespace GodotSharpGDExtension {");
         Enum(e, file);
         file.WriteLine("}");
         file.Close();
@@ -261,13 +258,15 @@ public class Convert
             }
         }
 
-        file.WriteLine("namespace GDExtension;");
-        file.WriteLine("");
+        file.WriteLine("namespace GodotSharpGDExtension;");
+        file.WriteLine();
         if (hasPointer == false)
         {
             file.WriteLine($"[StructLayout(LayoutKind.Explicit, Size = {size})]");
         }
         file.WriteLine($"public unsafe partial {(hasPointer ? "class" : "struct")} {Fixer.Type(c.name, api)} {{");
+        file.WriteLine();
+        file.WriteLine("\tstatic private bool _registered = false;");
         file.WriteLine();
 
         if (hasPointer)
@@ -336,6 +335,12 @@ public class Convert
                 Constructor(c, constructor, file, constructorRegistrations, d, hasPointer);
             }
         }
+        else
+        {
+            var emptyApiConstructor = new Api.Constructor { arguments = Array.Empty<Api.Argument>(), index = 0};
+            var emptyDocConstructor = new Constructor();
+            Constructor(c, emptyApiConstructor, file, constructorRegistrations, emptyDocConstructor, hasPointer);
+        }
 
         if (c.operators != null)
         {
@@ -377,8 +382,8 @@ public class Convert
         {
             file.WriteLine($"\t~{Fixer.Type(c.name, api)}() {{");
             //file.WriteLine($"\t\tif(_internal_pointer == null) {{ return; }}");
-            file.WriteLine($"\t\t__destructor(_internal_pointer);");
-            //file.WriteLine($"\t\tGDExtensionMain.extensionInterface.mem_free(_internal_pointer);");
+            file.WriteLine($"\t\t__destructor.Data.Pointer(_internal_pointer);");
+            //file.WriteLine($"\t\tGDExtensionMain.extensionInterface.mem_free.Data.Pointer(_internal_pointer);");
             //file.WriteLine($"\t\t_internal_pointer = null;");
             file.WriteLine($"\t}}");
             file.WriteLine();
@@ -390,39 +395,41 @@ public class Convert
 
         foreach (var member in membersWithFunctions)
         {
-            file.WriteLine($"\tstatic Native.GDExtensionPtrGetter {member}_getter;");
-            file.WriteLine($"\tstatic Native.GDExtensionPtrSetter {member}_setter;");
+            file.WriteLine($"\tstatic GDExtensionInterface.GDExtensionPtrGetter {member}_getter;");
+            file.WriteLine($"\tstatic GDExtensionInterface.GDExtensionPtrSetter {member}_setter;");
         }
         for (var i = 0; i < constructorRegistrations.Count; i++)
         {
-            file.WriteLine($"\tstatic Native.GDExtensionPtrConstructor __constructorPointer_{i};");
+            file.WriteLine($"\tstatic GDExtensionInterface.GDExtensionPtrConstructor __constructorPointer_{i};");
         }
         for (var i = 0; i < operatorRegistrations.Count; i++)
         {
-            file.WriteLine($"\tstatic Native.GDExtensionPtrOperatorEvaluator __operatorPointer_{i};");
+            file.WriteLine($"\tstatic GDExtensionInterface.GDExtensionPtrOperatorEvaluator __operatorPointer_{i};");
         }
         for (var i = 0; i < methodRegistrations.Count; i++)
         {
-            file.WriteLine($"\tstatic Native.GDExtensionPtrBuiltInMethod __methodPointer_{i};");
+            file.WriteLine($"\tstatic GDExtensionInterface.GDExtensionPtrBuiltInMethod __methodPointer_{i} = {methodRegistrations[i]};");
         }
 
         if (hasPointer)
         {
-            file.WriteLine("\tstatic Native.GDExtensionPtrDestructor __destructor;");
+            file.WriteLine("\tstatic GDExtensionInterface.GDExtensionPtrDestructor __destructor;");
         }
 
         file.WriteLine();
 
         file.WriteLine("\tpublic static void Register() {");
+        file.WriteLine("\t\tif (_registered) return;");
+        file.WriteLine("\t\t_registered = true;");
         if (hasPointer)
         {
-            file.WriteLine($"\t\t__destructor = GDExtensionMain.extensionInterface.variant_get_ptr_destructor((Native.GDExtensionVariantType)Variant.Type.{Fixer.Type(c.name, api)});");
+            file.WriteLine($"\t\t__destructor = GDExtensionMain.extensionInterface.variant_get_ptr_destructor.Data.Pointer((GDExtensionInterface.GDExtensionVariantType)Variant.Type.{Fixer.Type(c.name, api)});");
         }
         foreach (var member in membersWithFunctions)
         {
             file.WriteLine($"\t\tvar _stringName{member} = new StringName(\"{member}\");");
-            file.WriteLine($"\t\t{member}_getter = GDExtensionMain.extensionInterface.variant_get_ptr_getter((Native.GDExtensionVariantType)Variant.Type.{Fixer.Type(c.name, api)}, _stringName{member}._internal_pointer);");
-            file.WriteLine($"\t\t{member}_setter = GDExtensionMain.extensionInterface.variant_get_ptr_setter((Native.GDExtensionVariantType)Variant.Type.{Fixer.Type(c.name, api)}, _stringName{member}._internal_pointer);");
+            file.WriteLine($"\t\t{member}_getter = GDExtensionMain.extensionInterface.variant_get_ptr_getter.Data.Pointer((GDExtensionInterface.GDExtensionVariantType)Variant.Type.{Fixer.Type(c.name, api)}, _stringName{member}._internal_pointer);");
+            file.WriteLine($"\t\t{member}_setter = GDExtensionMain.extensionInterface.variant_get_ptr_setter.Data.Pointer((GDExtensionInterface.GDExtensionVariantType)Variant.Type.{Fixer.Type(c.name, api)}, _stringName{member}._internal_pointer);");
         }
         for (var i = 0; i < constructorRegistrations.Count; i++)
         {
@@ -431,10 +438,6 @@ public class Convert
         for (var i = 0; i < operatorRegistrations.Count; i++)
         {
             file.WriteLine(operatorRegistrations[i]);
-        }
-        for (var i = 0; i < methodRegistrations.Count; i++)
-        {
-            file.WriteLine(methodRegistrations[i]);
         }
         if (c.constants != null)
         {
@@ -487,13 +490,13 @@ public class Convert
 					get {
 						{{member.type}} res;
 						fixed ({{Fixer.Type(c.name, api)}}* ptr = &this) {
-							{{member.name}}_getter(ptr, &res);
+							{{member.name}}_getter.Data.Pointer(ptr, &res);
 						}
 						return res;
 					}
 					set {
 						fixed ({{Fixer.Type(c.name, api)}}* ptr = &this) {
-							{{member.name}}_setter(ptr, &value);
+							{{member.name}}_setter.Data.Pointer(ptr, &value);
 						}
 					}
 				}
@@ -522,19 +525,20 @@ public class Convert
             file.Write(value: $"{Fixer.Type(a.type, api)} {Fixer.Name(a.name)}");
         }
         file.WriteLine(") {");
+        file.WriteLine("\t\tRegister();");
         if (hasPointer)
         {
-            file.WriteLine("\t\t_internal_pointer = GDExtensionMain.extensionInterface.mem_alloc(StructSize);");
+            file.WriteLine("\t\t_internal_pointer = GDExtensionMain.extensionInterface.mem_alloc.Data.Pointer(StructSize);");
             file.WriteLine("\t\t\t\tvar bytePointer = (byte*)_internal_pointer;\n\t\tfor (int i = 0; i < StructSize; i++)\n\t\t{\n\t\t\tbytePointer[i] = 0;\n\t\t}");
 
         }
         var m = $"__constructorPointer_{constructorRegistrations.Count}";
-        file.WriteLine($"\t\tvar constructor = {m};");
-        constructorRegistrations.Add($"\t\t{m} = GDExtensionMain.extensionInterface.variant_get_ptr_constructor((Native.GDExtensionVariantType)Variant.Type.{Fixer.Type(c.name, api)}, {constructor.index});");
+        file.WriteLine($"\t\tvar constructor = {m}.Data.Pointer;");
+        constructorRegistrations.Add($"\t\t{m} = GDExtensionMain.extensionInterface.variant_get_ptr_constructor.Data.Pointer((GDExtensionInterface.GDExtensionVariantType)Variant.Type.{Fixer.Type(c.name, api)}, {constructor.index});");
 
         if (constructor.arguments != null)
         {
-            file.WriteLine($"\t\tvar args = stackalloc void*[{constructor.arguments.Length}];");
+            file.WriteLine($"\t\tvar args = stackalloc GDExtensionInterface.GDExtensionConstTypePtr[{constructor.arguments.Length}];");
             for (var i = 0; i < constructor.arguments.Length; i++)
             {
                 var arg = constructor.arguments[i];
@@ -556,7 +560,7 @@ public class Convert
         }
         else
         {
-            file.WriteLine("(void**)(void*)null);");
+            file.WriteLine("null);");
         }
         if (hasPointer == false)
         {
@@ -587,8 +591,8 @@ public class Convert
             }
             file.WriteLine($"\tpublic static {Fixer.Type(op.returnType, api)} {name}({Fixer.Type(className, api)} left, {Fixer.Type(op.rightType, api)} right) {{");
             var m = $"__operatorPointer_{operatorRegistrations.Count}";
-            file.WriteLine($"\t\tvar __op = {m};");
-            operatorRegistrations.Add($"\t\t{m} = GDExtensionMain.extensionInterface.variant_get_ptr_operator_evaluator((Native.GDExtensionVariantOperator)Variant.Operator.{Fixer.VariantOperator(op.name)}, (Native.GDExtensionVariantType)Variant.Type.{className}, (Native.GDExtensionVariantType)Variant.Type.{Fixer.VariantName(op.rightType)});");
+            file.WriteLine($"\t\tvar __op = {m}.Data.Pointer;");
+            operatorRegistrations.Add($"\t\t{m} = GDExtensionMain.extensionInterface.variant_get_ptr_operator_evaluator.Data.Pointer((GDExtensionInterface.GDExtensionVariantOperator)Variant.Operator.{Fixer.VariantOperator(op.name)}, (GDExtensionInterface.GDExtensionVariantType)Variant.Type.{className}, (GDExtensionInterface.GDExtensionVariantType)Variant.Type.{Fixer.VariantName(op.rightType)});");
             file.WriteLine($"\t\t{ReturnLocationType(op.returnType, "__res")};");
             file.WriteLine($"\t\t__op({ValueToPointer("left", className)}, {ValueToPointer("right", op.rightType)}, &__res);");
             file.WriteLine($"\t\treturn {ReturnStatementValue(op.returnType)};");
@@ -608,8 +612,8 @@ public class Convert
             }
             file.WriteLine($"\tpublic static {Fixer.Type(op.returnType, api)} {name}({Fixer.Type(className, api)} value) {{");
             var m = $"__operatorPointer_{operatorRegistrations.Count}";
-            file.WriteLine($"\t\tvar __op = {m};");
-            operatorRegistrations.Add($"\t\t{m} = GDExtensionMain.extensionInterface.variant_get_ptr_operator_evaluator((Native.GDExtensionVariantOperator)Variant.Operator.{Fixer.VariantOperator(op.name)}, (Native.GDExtensionVariantType)Variant.Type.{className}, (Native.GDExtensionVariantType)Variant.Type.Nil);");
+            file.WriteLine($"\t\tvar __op = {m}.Data.Pointer;");
+            operatorRegistrations.Add($"\t\t{m} = GDExtensionMain.extensionInterface.variant_get_ptr_operator_evaluator.Data.Pointer((GDExtensionInterface.GDExtensionVariantOperator)Variant.Operator.{Fixer.VariantOperator(op.name)}, (GDExtensionInterface.GDExtensionVariantType)Variant.Type.{className}, (GDExtensionInterface.GDExtensionVariantType)Variant.Type.Nil);");
             file.WriteLine($"\t\t{ReturnLocationType(op.returnType, "__res")};");
             file.WriteLine($"\t\t__op({ValueToPointer("value", className)}, null, &__res);");
             file.WriteLine($"\t\treturn {ReturnStatementValue(op.returnType)};");
@@ -706,7 +710,7 @@ public class Convert
             {
                 return $"__res";
             }
-            return $"new {f}(GDExtensionMain.extensionInterface.MoveToUnmanaged(__res))";
+            return $"new {f}(GDExtensionMain.MoveToUnmanaged(__res))";
         }
         else if(f == "Variant")
         {
@@ -844,11 +848,16 @@ public class Convert
             file.Write("params Variant[] arguments");
         }
         file.WriteLine(") {");
+        if ((meth.isStatic ?? false) || type == MethodType.Utility || isSingleton)
+        {
+            file.WriteLine("\t\tRegister();");
+        }
+        
         var m = "";
         switch (type)
         {
             case MethodType.Class:
-                if (meth.isVirtual)
+                if (meth.isVirtual || meth.hash is null)
                 {
                     if (!string.IsNullOrEmpty(ret))
                     {
@@ -858,20 +867,28 @@ public class Convert
                     return;
                 }
                 m = $"__methodPointer_{methodRegistrations.Count}";
-                methodRegistrations.Add($"\t\t{m} = GDExtensionMain.extensionInterface.classdb_get_method_bind(__godot_name._internal_pointer, new StringName(\"{meth.name}\")._internal_pointer, {meth.hash ?? 0});");
+                methodRegistrations.Add($"GDExtensionMain.extensionInterface.classdb_get_method_bind.Data.Pointer(__godot_name._internal_pointer, new StringName(\"{meth.name}\")._internal_pointer, {meth.hash ?? 0})");
                 break;
             case MethodType.Native:
                 m = $"__methodPointer_{methodRegistrations.Count}";
-                methodRegistrations.Add($"\t\t{m} = GDExtensionMain.extensionInterface.variant_get_ptr_builtin_method((Native.GDExtensionVariantType)Variant.Type.{className}, new StringName(\"{meth.name}\")._internal_pointer, {meth.hash ?? 0});");
+                methodRegistrations.Add($"GDExtensionMain.extensionInterface.variant_get_ptr_builtin_method.Data.Pointer((GDExtensionInterface.GDExtensionVariantType)Variant.Type.{className}, new StringName(\"{meth.name}\")._internal_pointer, {meth.hash ?? 0})");
                 break;
             case MethodType.Utility:
                 m = $"__methodPointer_{methodRegistrations.Count}";
-                methodRegistrations.Add($"\t\t{m} = GDExtensionMain.extensionInterface.variant_get_ptr_utility_function(new StringName(\"{meth.name}\")._internal_pointer, {meth.hash ?? 0});");
+                methodRegistrations.Add($"GDExtensionMain.extensionInterface.variant_get_ptr_utility_function.Data.Pointer(new StringName(\"{meth.name}\")._internal_pointer, {meth.hash ?? 0})");
                 break;
         }
         if (meth.isVararg)
         {
-            var t = type == MethodType.Class ? "void*" : "void*";
+            string t;
+            if (type == MethodType.Class)
+            {
+                t = "GDExtensionInterface.GDExtensionConstVariantPtr";
+            }
+            else
+            {
+                t = "GDExtensionInterface.GDExtensionConstTypePtr";
+            }
             if (meth.arguments != null)
             {
                 file.WriteLine($"\t\tvar __args = stackalloc {t}[{meth.arguments.Length} + arguments.Length];");
@@ -883,7 +900,7 @@ public class Convert
         }
         else if (meth.arguments != null)
         {
-            file.WriteLine($"\t\tvar __args = stackalloc void*[{meth.arguments.Length}];");
+            file.WriteLine($"\t\tvar __args = stackalloc GDExtensionInterface.GDExtensionConstTypePtr[{meth.arguments.Length}];");
         }
         if (meth.arguments != null)
         {
@@ -925,16 +942,16 @@ public class Convert
         {
             if (meth.isVararg)
             {
-                file.Write($"\t\tGDExtensionMain.extensionInterface.object_method_bind_call({m}, ");
+                file.Write($"\t\tGDExtensionMain.extensionInterface.object_method_bind_call.Data.Pointer({m}, ");
             }
             else
             {
-                file.Write($"\t\tGDExtensionMain.extensionInterface.object_method_bind_ptrcall({m}, ");
+                file.Write($"\t\tGDExtensionMain.extensionInterface.object_method_bind_ptrcall.Data.Pointer({m}, ");
             }
         }
         else
         {
-            file.Write($"\t\t{m}(");
+            file.Write($"\t\t{m}.Data.Pointer(");
         }
         if (type == MethodType.Utility)
         {
@@ -1110,11 +1127,13 @@ public class Convert
 
         var methodRegistrations = new List<string>();
 
-        file.WriteLine("namespace GDExtension;");
-        file.WriteLine("");
+        file.WriteLine("namespace GodotSharpGDExtension;");
+        file.WriteLine();
         file.Write("public unsafe ");
         var isSingleton = api.singletons.Any(x => x.type == c.name);
         file.WriteLine($"partial class {c.name} : {(c.inherits ?? "Wrapped")} {{");
+        file.WriteLine();
+        file.WriteLine("\tprivate static bool _registered = false;");
         file.WriteLine();
 
 
@@ -1122,7 +1141,7 @@ public class Convert
         {
             file.WriteLine($"\tprivate static {c.name} _singleton = null;");
             file.WriteLine($"\tpublic static {c.name} Singleton {{");
-            file.WriteLine($"\t\tget => _singleton ??= new {c.name}(GDExtensionMain.extensionInterface.global_get_singleton(__godot_name._internal_pointer));");
+            file.WriteLine($"\t\tget => _singleton ??= new {c.name}(GDExtensionMain.extensionInterface.global_get_singleton.Data.Pointer(__godot_name._internal_pointer));");
             file.WriteLine("\t}");
             file.WriteLine();
         }
@@ -1324,25 +1343,29 @@ public class Convert
 
         EqualAndHash(c.name, file);
 
-        var content = c.name == "RefCounted" ? " Reference(); " : " ";
-        file.WriteLine($"\tpublic {c.name}() : base(__godot_name) {{{content}}}");
+        var content = c.name == "RefCounted" ? " Reference();\n" : "";
+
+        content += "\tRegister();";
+
+        file.WriteLine($"\tpublic {c.name}() : base(__godot_name) {{");
+        file.WriteLine(content);
+        file.WriteLine("}");
         file.WriteLine($"\tprotected {c.name}(StringName type) : base(type) {{{content}}}");
         file.WriteLine($"\tprotected {c.name}(void* ptr) : base(ptr) {{{content}}}");
         file.WriteLine($"\tinternal static {c.name} Construct(void* ptr) => new (ptr);");
         file.WriteLine();
 
-        file.WriteLine("\tpublic new static StringName __godot_name;");
+        file.WriteLine($"\tpublic new static StringName __godot_name = new StringName(\"{c.name}\");");
         for (var i = 0; i < methodRegistrations.Count; i++)
         {
-            file.WriteLine($"\tstatic void* __methodPointer_{i};");
+            file.WriteLine($"\tstatic void* __methodPointer_{i} = {methodRegistrations[i]};");
         }
         file.WriteLine();
-        file.WriteLine("\tpublic static new void Register() {");
-        file.WriteLine($"\t\t__godot_name = new StringName(\"{c.name}\");");
-        file.WriteLine($"\t\tObject.RegisterConstructor(\"{c.name}\", Construct);");
-        for (var i = 0; i < methodRegistrations.Count; i++)
+        file.WriteLine("\tpublic new static void Register() {");
+        file.WriteLine($"\t\tif (!RegisterConstructor(\"{c.name}\", Construct)) return;");
+        if (c.inherits is not null)
         {
-            file.WriteLine(methodRegistrations[i]);
+            file.WriteLine($"\t\tGodotSharpGDExtension.{c.inherits}.Register();");
         }
         file.WriteLine("\t}");
         file.WriteLine("}");
@@ -1368,7 +1391,7 @@ public class Convert
         type.name = "Type";
         operators.name = "Operator";
         var file = File.CreateText(dir + "/" + "Variant.cs");
-        file.WriteLine("namespace GDExtension;");
+        file.WriteLine("namespace GodotSharpGDExtension;");
         file.WriteLine();
         file.WriteLine("public sealed unsafe partial class Variant {");
         file.WriteLine();
@@ -1446,7 +1469,7 @@ public class Convert
             file.Write(VariantTypeToCSharpType(t));
             file.Write(" value, void* ptr) => constructors[(int)Type.");
             file.Write(t);
-            file.Write("].fromType(ptr, ");
+            file.Write("].fromType.Data.Pointer(ptr, ");
             if (t == "String")
             {
                 file.Write("StringMarshall.ToNative(value)");
@@ -1502,7 +1525,7 @@ public class Convert
             file.WriteLine(" res;");
             file.Write("\t\tconstructors[(int)Type.");
             file.Write(t);
-            file.WriteLine("].toType(&res, ptr);");
+            file.WriteLine("].toType.Data.Pointer(&res, ptr);");
             file.Write("\t\treturn ");
             if (t == "String")
             {
@@ -1512,7 +1535,7 @@ public class Convert
             {
                 file.Write("new ");
                 file.Write(t);
-                file.Write("(GDExtensionMain.extensionInterface.MoveToUnmanaged(res))");
+                file.Write("(GDExtensionMain.MoveToUnmanaged(res))");
             }
             else
             {

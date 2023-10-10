@@ -2,7 +2,8 @@
   "profiles": {
     "SharpGenerator": {
       "commandName": "Project",
-      "nativeDebugging": true
+      "nativeDebugging": true,
+      "commandLineArgs": "E:\\projekte\\godot\\bin\\godot.windows.editor.x86_64.exe"
     }
   }
 }

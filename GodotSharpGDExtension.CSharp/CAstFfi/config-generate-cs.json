@@ -1,0 +1,9 @@
+{
+  "inputFilePath": "./ast/cross-platform.json",
+  "outputFileDirectory": "./../Generated",
+  "namespaceName": "GodotSharpGDExtension",
+  "className": "GDExtensionInterface",
+  "libraryName": "sharp_extension",
+  "isEnabledFileScopedNamespace": true,
+  "isEnabledLibraryImport": true
+}
