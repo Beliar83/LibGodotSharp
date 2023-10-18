@@ -2,45 +2,34 @@ name: Publish NuGet Package Godot4.0
 on:
   push:
     branches:
-      - main
+      - '4.1_extension'
       
 env:
-  # Only used for the cache key. Increment version to force clean build.
-  GODOT_BASE_BRANCH: master
-  SCONSFLAGS: verbose=yes warnings=extra werror=yes module_text_server_fb_enabled=yes
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
 
 concurrency:
-  group: ci-${{github.actor}}-${{github.head_ref || github.run_number}}-${{github.ref}}-nugetpackages-Godot4.0
+  group: ci-${{github.actor}}-${{github.head_ref || github.run_number}}-${{github.ref}}-nugetpackages-Godot4.1
   cancel-in-progress: true
 
 jobs:
+  build-tools:
+    name: Tools build
+    uses: ./.github/workflows/tools_build.yml
   build:
     runs-on: "windows-latest"
     environment: NugetBuildEnviroment
     name: 'NuGet Package Build'
     steps:
-      - uses: actions/checkout@v3
+      - name: Wait for tools Build to succeed
+        uses: lewagon/wait-on-check-action@v1.3.1
+        with:
+          ref: ${{ github.ref }}
+          check-name: 'Build tools'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
           
-      - name: Setup Godot build cache
-        uses: ./.github/actions/godot-cache
-        with:
-          cache-name: 'windows-64-editor'
-        continue-on-error: true
-
-      - name: Setup python and scons
-        uses: ./.github/actions/godot-deps
-
-      - name: Setup MSVC problem matcher
-        uses: ammaraskar/msvc-problem-matcher@master
-        
-      - name: Compilation
-        uses: ./.github/actions/godot-build
-        with:
-          sconsflags: ${{ env.SCONSFLAGS }} library_type=shared_library
-          platform: windows
-          tests: false      
+      - uses: actions/checkout@v3           
           
       - name: Setup .NET 6
         uses: actions/setup-dotnet@v2
@@ -118,6 +107,16 @@ jobs:
         uses: dawidd6/action-download-artifact@v2
         with:
           github_token: ${{secrets.GITHUB_TOKEN}}
+          workflow: tools_build.yml
+          workflow_conclusion: success
+          pr: ${{github.event.pull_request.number}}
+          commit: ${{github.event.pull_request.head.sha}}
+          name: 'windows-64-editor'
+          
+      - name: Download artifact macos-template-release64
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          github_token: ${{secrets.GITHUB_TOKEN}}
           workflow: macos_builds.yml
           workflow_conclusion: success
           pr: ${{github.event.pull_request.number}}
@@ -186,7 +185,7 @@ jobs:
       
       - name: Setting up build version
         run: |
-          $version = "4.0.{0:#}" -f $("${{vars.LIB_GODOTSHARP_VERSION}}")
+          $version = "4.1.1"
           echo "BUILD_VERSION=$version" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Run Generator
